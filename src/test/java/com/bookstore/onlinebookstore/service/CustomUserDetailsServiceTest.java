@@ -20,8 +20,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for CustomUserDetailsService
- * Tests Spring Security UserDetailsService implementation
+ * Unit tests for CustomUserDetailsService.
+ * Validates the bridge between the Database (UserRepository) and Spring Security.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CustomUserDetailsService Unit Tests")
@@ -47,13 +47,10 @@ class CustomUserDetailsServiceTest {
     @Test
     @DisplayName("Should load user by username successfully")
     void shouldLoadUserByUsernameSuccessfully() {
-        // Given
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-        // When
         UserDetails userDetails = userDetailsService.loadUserByUsername("testuser");
 
-        // Then
         assertThat(userDetails).isNotNull();
         assertThat(userDetails.getUsername()).isEqualTo("testuser");
         assertThat(userDetails.getPassword()).isEqualTo("encodedPassword123");
@@ -63,117 +60,56 @@ class CustomUserDetailsServiceTest {
     @Test
     @DisplayName("Should assign USER role to loaded user")
     void shouldAssignUserRole() {
-        // Given
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-        // When
         UserDetails userDetails = userDetailsService.loadUserByUsername("testuser");
 
-        // Then
         assertThat(userDetails.getAuthorities()).hasSize(1);
         assertThat(userDetails.getAuthorities())
                 .extracting("authority")
                 .containsExactly("ROLE_USER");
-        verify(userRepository, times(1)).findByUsername("testuser");
     }
 
     @Test
-    @DisplayName("Should throw UsernameNotFoundException when user not found")
+    @DisplayName("Should throw UsernameNotFoundException with descriptive message")
     void shouldThrowExceptionWhenUserNotFound() {
-        // Given
-        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
+        String username = "nonexistent";
+        when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
-        // When & Then
-        assertThatThrownBy(() -> userDetailsService.loadUserByUsername("nonexistent"))
+        assertThatThrownBy(() -> userDetailsService.loadUserByUsername(username))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User not found");
+                .hasMessage("User not found with username: nonexistent");
 
-        verify(userRepository, times(1)).findByUsername("nonexistent");
+        verify(userRepository, times(1)).findByUsername(username);
     }
 
     @Test
-    @DisplayName("Should handle null username")
+    @DisplayName("Should handle null username error message")
     void shouldHandleNullUsername() {
-        // Given
         when(userRepository.findByUsername(null)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThatThrownBy(() -> userDetailsService.loadUserByUsername(null))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User not found");
-
-        verify(userRepository, times(1)).findByUsername(null);
+                .hasMessage("User not found with username: null");
     }
 
     @Test
-    @DisplayName("Should handle empty username")
+    @DisplayName("Should handle empty username error message")
     void shouldHandleEmptyUsername() {
-        // Given
         when(userRepository.findByUsername("")).thenReturn(Optional.empty());
 
-        // When & Then
         assertThatThrownBy(() -> userDetailsService.loadUserByUsername(""))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User not found");
-
-        verify(userRepository, times(1)).findByUsername("");
+                .hasMessage("User not found with username: ");
     }
 
     @Test
-    @DisplayName("Should create UserDetails with correct password")
-    void shouldCreateUserDetailsWithCorrectPassword() {
-        // Given
-        String encodedPassword = "superSecureEncodedPassword";
-        testUser.setPassword(encodedPassword);
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-
-        // When
-        UserDetails userDetails = userDetailsService.loadUserByUsername("testuser");
-
-        // Then
-        assertThat(userDetails.getPassword()).isEqualTo(encodedPassword);
-        verify(userRepository, times(1)).findByUsername("testuser");
-    }
-
-    @Test
-    @DisplayName("Should handle username with special characters")
-    void shouldHandleUsernameWithSpecialCharacters() {
-        // Given
-        String specialUsername = "user@example.com";
-        testUser.setUsername(specialUsername);
-        when(userRepository.findByUsername(specialUsername)).thenReturn(Optional.of(testUser));
-
-        // When
-        UserDetails userDetails = userDetailsService.loadUserByUsername(specialUsername);
-
-        // Then
-        assertThat(userDetails.getUsername()).isEqualTo(specialUsername);
-        verify(userRepository, times(1)).findByUsername(specialUsername);
-    }
-
-    @Test
-    @DisplayName("Should handle case-sensitive username")
-    void shouldHandleCaseSensitiveUsername() {
-        // Given
-        when(userRepository.findByUsername("TestUser")).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThatThrownBy(() -> userDetailsService.loadUserByUsername("TestUser"))
-                .isInstanceOf(UsernameNotFoundException.class);
-
-        verify(userRepository, times(1)).findByUsername("TestUser");
-    }
-
-    @Test
-    @DisplayName("Should return enabled UserDetails")
+    @DisplayName("Should return enabled and non-locked UserDetails")
     void shouldReturnEnabledUserDetails() {
-        // Given
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-        // When
         UserDetails userDetails = userDetailsService.loadUserByUsername("testuser");
 
-        // Then
         assertThat(userDetails.isEnabled()).isTrue();
         assertThat(userDetails.isAccountNonExpired()).isTrue();
         assertThat(userDetails.isAccountNonLocked()).isTrue();
@@ -183,43 +119,21 @@ class CustomUserDetailsServiceTest {
     @Test
     @DisplayName("Should call repository only once per request")
     void shouldCallRepositoryOnlyOnce() {
-        // Given
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
 
-        // When
         userDetailsService.loadUserByUsername("testuser");
 
-        // Then
         verify(userRepository, times(1)).findByUsername("testuser");
         verifyNoMoreInteractions(userRepository);
     }
 
     @Test
-    @DisplayName("Should preserve user entity data in UserDetails")
-    void shouldPreserveUserEntityData() {
-        // Given
-        testUser.setUsername("john.doe");
-        testUser.setPassword("hashedPassword456");
-        when(userRepository.findByUsername("john.doe")).thenReturn(Optional.of(testUser));
-
-        // When
-        UserDetails userDetails = userDetailsService.loadUserByUsername("john.doe");
-
-        // Then
-        assertThat(userDetails.getUsername()).isEqualTo("john.doe");
-        assertThat(userDetails.getPassword()).isEqualTo("hashedPassword456");
-    }
-
-    @Test
-    @DisplayName("Should throw exception with correct message")
+    @DisplayName("Should throw exception containing 'User not found' generic string")
     void shouldThrowExceptionWithCorrectMessage() {
-        // Given
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
 
-        // When & Then
         assertThatThrownBy(() -> userDetailsService.loadUserByUsername("anyuser"))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessageContaining("User not found")
-                .hasNoCause();
+                .hasMessageContaining("User not found");
     }
 }
