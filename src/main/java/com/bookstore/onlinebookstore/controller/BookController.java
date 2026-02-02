@@ -7,13 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 /**
- * REST Controller for managing book-related HTTP requests.
- * @RestController: Combines @Controller and @ResponseBody, meaning the returned
- * data is serialized directly into JSON for the client.
- * @RequestMapping: Defines the base URL path for all endpoints in this class.
- * @RequiredArgsConstructor: A Lombok annotation that generates a constructor
- * for all final fields (enabling constructor injection).
+ * The type Book controller.
  */
 @RestController
 @RequestMapping("/api/books")
@@ -23,22 +19,24 @@ public class BookController {
     // The repository interface used to perform CRUD operations on the 'books' table
     private final BookRepository bookRepository;
 
+
     /**
-     * Endpoint: GET /api/books
-     * Retrieves a full list of all books in the database.
-     * @return List of Book entities.
+     * Gets all books.
+     *
+     * @return the all books
      */
     @GetMapping
     public List<Book> getAllBooks() {
         return bookRepository.findAll();
     }
 
+
     /**
-     * Endpoint: GET /api/books/search
-     * Handles filtered searches based on text queries and/or category selection.
-     * * @param query (Optional) Text to match against book titles or authors.
-     * @param categoryId (Optional) The ID of the category to filter by.
-     * @return A filtered list of books based on the provided parameters.
+     * Search books list.
+     *
+     * @param query      the query
+     * @param categoryId the category id
+     * @return the list
      */
     @GetMapping("/search")
     public List<Book> searchBooks(

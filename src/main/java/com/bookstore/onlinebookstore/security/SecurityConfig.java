@@ -11,9 +11,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+
 /**
- * Main configuration class for Spring Security.
- * @Configuration: Tells Spring to use this class to set up security beans.
+ * The type Security config.
  */
 @Configuration
 @RequiredArgsConstructor
@@ -22,7 +22,11 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
 
     /**
-     * Defines the security rules for HTTP requests.
+     * Filter chain security filter chain.
+     *
+     * @param http the http
+     * @return the security filter chain
+     * @throws Exception the exception
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -61,8 +65,9 @@ public class SecurityConfig {
     }
 
     /**
-     * Bean used by AuthService to hash passwords.
-     * BCrypt is a standard, strong hashing algorithm.
+     * Password encoder password encoder.
+     *
+     * @return the password encoder
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -70,7 +75,11 @@ public class SecurityConfig {
     }
 
     /**
-     * Exposes the AuthenticationManager to handle the login logic.
+     * Authentication manager authentication manager.
+     *
+     * @param config the config
+     * @return the authentication manager
+     * @throws Exception the exception
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

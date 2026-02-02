@@ -5,9 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Entity class representing the 'books' table in the database.
- * @Entity: Specifies that this class is a JPA entity.
- * @Table: Maps this entity to the specific table name in MySQL.
+ * The type Book.
  */
 @Entity
 @Table(name = "books")
@@ -32,13 +30,6 @@ public class Book {
 
     private String imageUrl;
 
-    /**
-     * Relationship Mapping:
-     * @ManyToOne: Many books can belong to one category.
-     * fetch = FetchType.LAZY: Don't load the category data unless it's explicitly called
-     * (improves performance).
-     * @JoinColumn: Defines the foreign key column name in the 'books' table.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;

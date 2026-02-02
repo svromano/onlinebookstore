@@ -7,18 +7,17 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
+
 /**
- * Data Access Layer for Customer Orders.
- * This repository manages the retrieval of complete order histories from the database.
+ * The interface Order repository.
  */
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
     /**
-     * CUSTOM QUERY: This JPQL (Java Persistence Query Language) statement
-     * retrieves all orders for a specific user.
-     * 1. FILTER: It looks for orders matching the provided 'userId'.
-     * 2. SORT: It uses 'ORDER BY o.createdAt DESC' so that the customer's
-     * most recent purchases appear at the top of their history page.
+     * Find by user id list.
+     *
+     * @param userId the user id
+     * @return the list
      */
     @Query("SELECT o FROM Order o WHERE o.userId = :userId ORDER BY o.createdAt DESC")
     List<Order> findByUserId(@Param("userId") Long userId);

@@ -4,9 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * This is a Data Transfer Object (DTO).
- * Unlike an Entity, it is NOT saved in the database. It is a "container" used
- * to carry data from the Frontend to the Backend during the checkout process.
+ * The type Checkout item.
  */
 @Getter
 @Setter

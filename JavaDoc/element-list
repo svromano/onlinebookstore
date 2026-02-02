@@ -1,0 +1,7 @@
+com.bookstore.onlinebookstore
+com.bookstore.onlinebookstore.controller
+com.bookstore.onlinebookstore.dto
+com.bookstore.onlinebookstore.entity
+com.bookstore.onlinebookstore.repository
+com.bookstore.onlinebookstore.security
+com.bookstore.onlinebookstore.service

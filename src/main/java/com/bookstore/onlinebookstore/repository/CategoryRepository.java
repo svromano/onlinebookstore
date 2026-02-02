@@ -5,9 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * Data Access Layer for Categories.
- * By extending JpaRepository, this interface automatically provides methods
- * for saving, deleting, and finding Categories without writing any SQL.
+ * The interface Category repository.
  */
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {

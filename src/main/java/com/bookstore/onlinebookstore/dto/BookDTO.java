@@ -2,12 +2,9 @@ package com.bookstore.onlinebookstore.dto;
 
 import lombok.Data;
 
+
 /**
- * Data Transfer Object (DTO) for Book information.
- * Using a DTO allows us to "flatten" the data—for example, including the category name
- * directly instead of the entire Category object.
- * * @Data: A Lombok annotation that generates Getters, Setters, toString,
- * equals, and hashCode methods automatically.
+ * The type Book dto.
  */
 @Data
 public class BookDTO {
@@ -23,9 +20,15 @@ public class BookDTO {
     private String categoryName;
 
     /**
-     * All-args constructor.
-     * This is useful when using JPQL queries (like "SELECT new BookDTO(...)")
-     * to map database results directly into this object.
+     * Instantiates a new Book dto.
+     *
+     * @param id           the id
+     * @param title        the title
+     * @param author       the author
+     * @param price        the price
+     * @param description  the description
+     * @param imageUrl     the image url
+     * @param categoryName the category name
      */
     public BookDTO(Long id, String title, String author, double price, String description, String imageUrl, String categoryName) {
         this.id = id;

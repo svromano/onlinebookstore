@@ -8,8 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * The Authentication Controller handles incoming web requests for user security.
- * It acts as the "Gatekeeper," processing registration and login attempts via REST API.
+ * The type Auth controller.
  */
 @RestController
 @RequestMapping("/api/auth") // Base URL path for all authentication-related endpoints
@@ -20,9 +19,10 @@ public class AuthController {
     private final UserRepository userRepository;
 
     /**
-     * POST /api/auth/register
-     * Receives a User object from the frontend and performs validation checks
-     * before saving them to the database.
+     * Register response entity.
+     *
+     * @param user the user
+     * @return the response entity
      */
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {

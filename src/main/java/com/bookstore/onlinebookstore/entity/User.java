@@ -3,9 +3,9 @@ package com.bookstore.onlinebookstore.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+
 /**
- * Represents a registered customer in the bookstore.
- * This entity stores the core credentials used for authentication and profile management.
+ * The type User.
  */
 @Entity
 @Table(name = "users")

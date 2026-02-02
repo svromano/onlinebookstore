@@ -6,8 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
- * Service class responsible for handling authentication and user registration logic.
- * The @Service annotation registers this class as a Spring Bean in the application context.
+ * The type Auth service.
  */
 @Service
 public class AuthService {
@@ -17,8 +16,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * Constructor Injection: Spring automatically provides the UserRepository
-     * and the PasswordEncoder bean (likely BCrypt) defined in your SecurityConfig.
+     * Instantiates a new Auth service.
+     *
+     * @param userRepository  the user repository
+     * @param passwordEncoder the password encoder
      */
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -26,20 +27,15 @@ public class AuthService {
     }
 
     /**
-     * Registers a new user by securing their credentials and persisting them to the database.
-     * * @param user The user entity containing raw registration data (username, email, plain password).
-     * @return The saved User entity, now containing the encoded password and generated ID.
+     * Register user.
+     *
+     * @param user the user
+     * @return the user
      */
     public User register(User user) {
-        // 1. Hash the plain-text password provided by the user.
-        // This prevents storing "plainPassword123" in the database, which is a major security risk.
+
         String encodedPassword = passwordEncoder.encode(user.getPassword());
-
-        // 2. Overwrite the user's plain-text password with the secure, hashed version.
         user.setPassword(encodedPassword);
-
-        // 3. Persist the user to the MySQL database via the JPA repository.
-        // This is where the 'INSERT INTO users...' SQL command is actually triggered.
         return userRepository.save(user);
     }
 }

@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+
 /**
- * Represents an individual product line within a customer's order.
- * It acts as a permanent record of what was bought, at what price, and in what quantity.
+ * The type Order item.
  */
 @Entity
 @Table(name = "order_items")

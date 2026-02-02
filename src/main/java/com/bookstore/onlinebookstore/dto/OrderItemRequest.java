@@ -4,9 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * A Data Transfer Object (DTO) used to receive order details from the frontend.
- * This class acts as a template for a single item within a customer's shopping cart
- * during the checkout process.
+ * The type Order item request.
  */
 @Getter
 @Setter

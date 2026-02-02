@@ -8,10 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 /**
- * Controller for handling shopping cart and checkout operations.
- * @RestController: Marks this as a RESTful web service endpoint.
- * @RequestMapping("/api/cart"): Sets the base path for all cart-related actions.
+ * The type Cart controller.
  */
 @RestController
 @RequestMapping("/api/cart")
@@ -21,13 +20,14 @@ public class CartController {
     // Injecting the OrderService to handle the business logic of order creation
     private final OrderService orderService;
 
+
     /**
-     * Endpoint: POST /api/cart/checkout
-     * Finalizes the purchase by converting cart items into a permanent order record.
-     * * @param userId (Query Param) The unique ID of the user placing the order.
-     * @param username (Query Param) The name of the user for display/logging purposes.
-     * @param items (Request Body) A JSON list of books, quantities, and prices from the cart.
-     * @return ResponseEntity containing a success message or an error status.
+     * Checkout response entity.
+     *
+     * @param userId   the user id
+     * @param username the username
+     * @param items    the items
+     * @return the response entity
      */
     @PostMapping("/checkout")
     public ResponseEntity<String> checkout(
