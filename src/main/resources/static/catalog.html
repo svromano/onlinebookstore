@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Catalog</title>
+
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
 
         body {
@@ -16,11 +17,10 @@
             background: #f5f5f5;
         }
 
-        /* Navigation Bar - Matching cart and orders pages */
+        /* NAVBAR */
         nav {
             background: #2c3e50;
             padding: 15px 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -36,7 +36,6 @@
             list-style: none;
             display: flex;
             gap: 20px;
-            align-items: center;
         }
 
         nav ul li a {
@@ -55,14 +54,14 @@
             background: #4CAF50;
         }
 
-        /* Container */
+        /* CONTAINER */
         .container {
-            padding: 20px;
             max-width: 1400px;
-            margin: 0 auto;
+            margin: auto;
+            padding: 20px;
         }
 
-        /* Filters Section */
+        /* FILTERS */
         .filters {
             display: flex;
             justify-content: center;
@@ -71,43 +70,41 @@
             flex-wrap: wrap;
         }
 
-        .filters input, .filters select {
-            padding: 10px 15px;
+        .filters input,
+        .filters select {
+            padding: 12px 15px;
             font-size: 14px;
             border-radius: 5px;
             border: 1px solid #ddd;
-            background: white;
-            min-width: 200px;
+            min-width: 250px;
         }
 
-        .filters input:focus, .filters select:focus {
+        .filters input:focus,
+        .filters select:focus {
             outline: none;
             border-color: #4CAF50;
         }
 
-        /* Catalog Grid */
+        /* CATALOG GRID */
         .catalog {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 25px;
-            margin-top: 20px;
         }
 
-        /* Book Card */
+        /* BOOK CARD */
         .book-card {
             background: white;
             border-radius: 10px;
-            padding: 0;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s;
         }
 
         .book-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .book-card img {
@@ -118,120 +115,79 @@
 
         .book-card-content {
             padding: 15px;
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
+            flex-grow: 1;
         }
 
         .book-card h3 {
-            margin: 0 0 10px 0;
             font-size: 18px;
+            margin-bottom: 5px;
             color: #2c3e50;
-            min-height: 44px;
         }
 
-        .book-info {
-            margin-bottom: 10px;
-            flex-grow: 1;
-        }
-
-        .book-info p {
-            font-size: 13px;
-            margin: 5px 0;
+        .book-author {
+            font-size: 14px;
             color: #555;
+            margin-bottom: 5px;
         }
 
-        .book-info p strong {
-            color: #2c3e50;
-        }
-
-        .book-price {
-            font-size: 20px;
-            font-weight: bold;
+        .book-category {
+            font-size: 12px;
             color: #4CAF50;
-            margin: 10px 0;
+            font-weight: bold;
+            margin-bottom: 8px;
         }
 
         .book-description {
             font-size: 13px;
             color: #777;
-            margin: 10px 0;
             line-height: 1.4;
+            margin-bottom: 10px;
+            flex-grow: 1;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            min-height: 60px;
+        }
+
+        .book-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 10px;
         }
 
         .book-card button {
             padding: 12px;
+            border: none;
             background: #4CAF50;
             color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
             font-size: 14px;
             font-weight: bold;
-            transition: background 0.3s;
-            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
         .book-card button:hover {
             background: #45a049;
         }
 
-        /* Empty State */
-        .empty-state {
+        /* PAGINATION */
+        .pagination {
             text-align: center;
-            padding: 60px 20px;
-            color: #777;
+            margin: 30px 0;
         }
 
-        .empty-state h2 {
-            margin-bottom: 10px;
-            color: #555;
-        }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #555;
-        }
-
-        /* Error State */
-        .error {
-            background: #ffebee;
-            color: #d32f2f;
-            padding: 20px;
-            border-radius: 5px;
-            text-align: center;
-            margin: 20px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .catalog {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 15px;
-            }
-
-            nav {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            nav ul {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
+        .pagination button {
+            padding: 8px 15px;
+            margin: 0 5px;
         }
     </style>
 </head>
+
 <body>
 
-<!-- Navigation Bar -->
 <nav>
     <div class="logo">Online Bookstore</div>
     <ul>
@@ -242,48 +198,28 @@
     </ul>
 </nav>
 
-<!-- Main Container -->
 <div class="container">
-    <!-- Filters -->
+
     <div class="filters">
-        <input type="text" id="searchInput" placeholder="🔍 Search books by title or author...">
+        <input type="text" id="searchInput" placeholder="🔍 Search by title or author">
         <select id="categorySelect">
             <option value="">All Categories</option>
-            <!-- Categories will populate here -->
         </select>
     </div>
 
-    <!-- Catalog -->
-    <div class="catalog" id="catalog">
-        <div class="loading">Loading books...</div>
+    <div class="catalog" id="catalog"></div>
+
+    <div class="pagination">
+        <button id="prevBtn">⬅ Previous</button>
+        <span id="pageInfo"></span>
+        <button id="nextBtn">Next ➡</button>
     </div>
+
 </div>
 
 <script>
-    const catalogEl = document.getElementById('catalog');
-    const searchInput = document.getElementById('searchInput');
-    const categorySelect = document.getElementById('categorySelect');
-    const logoutLink = document.getElementById('logoutLink');
-
-    // LocalStorage cart helper
-    function getCart() { return JSON.parse(localStorage.getItem('cart')) || []; }
-    function saveCart(cart) { localStorage.setItem('cart', JSON.stringify(cart)); }
-
-    function addToCart(book) {
-        const cart = getCart();
-        const existing = cart.find(b => b.id === book.id);
-        if (existing) {
-            existing.quantity += 1;
-            alert(`${book.title} quantity updated in cart!`);
-        } else {
-            cart.push({ ...book, quantity: 1 });
-            alert(`${book.title} added to cart!`);
-        }
-        saveCart(cart);
-    }
-
-    // Logout
-    logoutLink.addEventListener('click', (e) => {
+    // Logout functionality
+    document.getElementById('logoutLink').addEventListener('click', (e) => {
         e.preventDefault();
         if (confirm('Are you sure you want to logout?')) {
             localStorage.removeItem('cart');
@@ -292,90 +228,98 @@
             window.location.href = '/login.html';
         }
     });
+    const catalogEl = document.getElementById("catalog");
+    const searchInput = document.getElementById("searchInput");
+    const categorySelect = document.getElementById("categorySelect");
+    const pageInfo = document.getElementById("pageInfo");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
 
-    // Fetch categories
+    let currentPage = 0;
+    const pageSize = 4;
+    let totalPages = 0;
+
     async function fetchCategories() {
-        try {
-            const res = await fetch('/api/categories');
-            const categories = await res.json();
-            categories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.id;
-                option.textContent = cat.name;
-                categorySelect.appendChild(option);
-            });
-        } catch (err) {
-            console.error('Error loading categories:', err);
-        }
+        const res = await fetch("/api/categories");
+        const categories = await res.json();
+
+        categorySelect.innerHTML = '<option value="">All Categories</option>';
+
+        categories.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c.id;
+            opt.textContent = c.name;
+            categorySelect.appendChild(opt);
+        });
     }
 
-    // Fetch books with search and category filters
-    async function fetchBooks() {
-        const query = searchInput.value.trim();
-        const categoryId = categorySelect.value;
-        let url = `/api/books/search?`;
-        if (query) url += `query=${encodeURIComponent(query)}&`;
-        if (categoryId) url += `categoryId=${categoryId}&`;
+    async function fetchBooks(page = 0) {
+        let url = `/api/books?page=${page}&size=${pageSize}`;
 
-        try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Failed to load books');
+        if (searchInput.value)
+            url += `&query=${encodeURIComponent(searchInput.value)}`;
 
-            const books = await res.json();
-            renderCatalog(books);
-        } catch (err) {
-            console.error('Error loading books:', err);
-            catalogEl.innerHTML = `
-                <div class="error">
-                    <h3>Error Loading Books</h3>
-                    <p>${err.message}</p>
-                </div>
-            `;
-        }
+        if (categorySelect.value)
+            url += `&categoryId=${categorySelect.value}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        renderBooks(data.content);
+
+        currentPage = data.number;
+        totalPages = data.totalPages;
+
+        pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+        prevBtn.disabled = currentPage === 0;
+        nextBtn.disabled = currentPage === totalPages - 1;
     }
 
-    // Render catalog
-    function renderCatalog(books) {
-        catalogEl.innerHTML = '';
+    function renderBooks(books) {
+        catalogEl.innerHTML = "";
 
         if (!books.length) {
-            catalogEl.innerHTML = `
-                <div class="empty-state">
-                    <h2>No Books Found</h2>
-                    <p>Try adjusting your search or filters</p>
-                </div>
-            `;
+            catalogEl.innerHTML = "<p>No books found.</p>";
             return;
         }
 
         books.forEach(book => {
-            const card = document.createElement('div');
-            card.className = 'book-card';
+            const card = document.createElement("div");
+            card.className = "book-card";
+
             card.innerHTML = `
-                <img src="${book.imageUrl || 'https://via.placeholder.com/250x300?text=No+Image'}"
-                     alt="${book.title}"
-                     onerror="this.src='https://via.placeholder.com/250x300?text=No+Image'">
+                <img src="${book.imageUrl || 'https://via.placeholder.com/250x300'}">
                 <div class="book-card-content">
                     <h3>${book.title}</h3>
-                    <div class="book-info">
-                        <p><strong>Author:</strong> ${book.author}</p>
-                        <p><strong>Category:</strong> ${book.category?.name || 'N/A'}</p>
-                    </div>
-                    <div class="book-description">${book.description || 'No description available.'}</div>
+                    <div class="book-author">${book.author}</div>
+                    <div class="book-category">${book.category?.name || "Uncategorized"}</div>
+                    <div class="book-description">${book.description || "No description available."}</div>
                     <div class="book-price">$${book.price.toFixed(2)}</div>
                     <button>Add to Cart</button>
                 </div>
             `;
-            card.querySelector('button').addEventListener('click', () => addToCart(book));
+
+            card.querySelector("button").onclick = () => addToCart(book);
             catalogEl.appendChild(card);
         });
     }
 
-    // Event listeners
-    searchInput.addEventListener('input', fetchBooks);
-    categorySelect.addEventListener('change', fetchBooks);
+    function addToCart(book) {
+        const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        const existing = cart.find(b => b.id === book.id);
 
-    // Load data on page load
+        if (existing) existing.quantity++;
+        else cart.push({ ...book, quantity: 1 });
+
+        localStorage.setItem("cart", JSON.stringify(cart));
+        alert("Added to cart");
+    }
+
+    prevBtn.onclick = () => fetchBooks(currentPage - 1);
+    nextBtn.onclick = () => fetchBooks(currentPage + 1);
+    searchInput.oninput = () => fetchBooks(0);
+    categorySelect.onchange = () => fetchBooks(0);
+
     fetchCategories();
     fetchBooks();
 </script>

@@ -7,20 +7,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for BookService
- * Tests book-related operations with mocked repository
+ * Tests book-related operations with pagination and mocked repository
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BookService Unit Tests")
@@ -72,275 +79,468 @@ class BookServiceTest {
         testBooks = Arrays.asList(book1, book2, book3);
     }
 
-    // ==================== getAllBooks Tests ====================
+    // ==================== Get All Books Tests ====================
 
     @Test
-    @DisplayName("Should return all books")
-    void shouldReturnAllBooks() {
+    @DisplayName("Should return all books with pagination")
+    void shouldReturnAllBooksWithPagination() {
         // Given
-        when(bookRepository.findAll()).thenReturn(testBooks);
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> expectedPage = new PageImpl<>(testBooks, pageable, testBooks.size());
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(expectedPage);
 
         // When
-        List<Book> result = bookService.getAllBooks();
+        Page<Book> result = bookService.getBooks(null, null, page, size);
 
         // Then
-        assertThat(result).hasSize(3);
-        assertThat(result).isEqualTo(testBooks);
-        verify(bookRepository, times(1)).findAll();
+        assertThat(result.getContent()).hasSize(3);
+        assertThat(result.getTotalElements()).isEqualTo(3);
+        assertThat(result.getContent()).isEqualTo(testBooks);
+        verify(bookRepository, times(1)).findAll(pageable);
     }
 
     @Test
-    @DisplayName("Should return empty list when no books exist")
-    void shouldReturnEmptyListWhenNoBooksExist() {
+    @DisplayName("Should return empty page when no books exist")
+    void shouldReturnEmptyPageWhenNoBooksExist() {
         // Given
-        when(bookRepository.findAll()).thenReturn(Collections.emptyList());
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
         // When
-        List<Book> result = bookService.getAllBooks();
+        Page<Book> result = bookService.getBooks(null, null, page, size);
 
         // Then
-        assertThat(result).isEmpty();
-        verify(bookRepository, times(1)).findAll();
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isEqualTo(0);
+        verify(bookRepository, times(1)).findAll(pageable);
     }
 
     @Test
-    @DisplayName("Should call repository findAll method")
-    void shouldCallRepositoryFindAll() {
+    @DisplayName("Should handle different page sizes")
+    void shouldHandleDifferentPageSizes() {
         // Given
-        when(bookRepository.findAll()).thenReturn(testBooks);
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> expectedPage = new PageImpl<>(testBooks, pageable, testBooks.size());
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(expectedPage);
 
         // When
-        bookService.getAllBooks();
+        Page<Book> result = bookService.getBooks(null, null, page, size);
 
         // Then
-        verify(bookRepository, times(1)).findAll();
-        verifyNoMoreInteractions(bookRepository);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(bookRepository).findAll(pageableCaptor.capture());
+
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageSize()).isEqualTo(10);
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
     }
 
-    // ==================== getBooksByCategory Tests ====================
+    @Test
+    @DisplayName("Should handle different page numbers")
+    void shouldHandleDifferentPageNumbers() {
+        // Given
+        int page = 2;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> expectedPage = new PageImpl<>(Collections.emptyList(), pageable, 15);
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(expectedPage);
+
+        // When
+        bookService.getBooks(null, null, page, size);
+
+        // Then
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(bookRepository).findAll(pageableCaptor.capture());
+
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(2);
+    }
+
+    // ==================== Get Books by Category Tests ====================
 
     @Test
-    @DisplayName("Should return books by category ID")
+    @DisplayName("Should return books by category ID with pagination")
     void shouldReturnBooksByCategoryId() {
         // Given
         Long categoryId = 1L;
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
         List<Book> fictionBooks = Arrays.asList(testBooks.get(0), testBooks.get(1));
-        when(bookRepository.findByCategoryId(categoryId)).thenReturn(fictionBooks);
+        Page<Book> expectedPage = new PageImpl<>(fictionBooks, pageable, fictionBooks.size());
+
+        when(bookRepository.findByCategoryId(eq(categoryId), any(Pageable.class)))
+                .thenReturn(expectedPage);
 
         // When
-        List<Book> result = bookService.getBooksByCategory(categoryId);
+        Page<Book> result = bookService.getBooks(null, categoryId, page, size);
 
         // Then
-        assertThat(result).hasSize(2);
-        assertThat(result).allMatch(book -> book.getCategory().getId().equals(categoryId));
-        verify(bookRepository, times(1)).findByCategoryId(categoryId);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent()).allMatch(book -> book.getCategory().getId().equals(categoryId));
+        verify(bookRepository, times(1)).findByCategoryId(categoryId, pageable);
     }
 
     @Test
-    @DisplayName("Should return empty list when category has no books")
-    void shouldReturnEmptyListWhenCategoryHasNoBooks() {
+    @DisplayName("Should return empty page when category has no books")
+    void shouldReturnEmptyPageWhenCategoryHasNoBooks() {
         // Given
         Long categoryId = 999L;
-        when(bookRepository.findByCategoryId(categoryId)).thenReturn(Collections.emptyList());
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findByCategoryId(eq(categoryId), any(Pageable.class)))
+                .thenReturn(emptyPage);
 
         // When
-        List<Book> result = bookService.getBooksByCategory(categoryId);
+        Page<Book> result = bookService.getBooks(null, categoryId, page, size);
 
         // Then
-        assertThat(result).isEmpty();
-        verify(bookRepository, times(1)).findByCategoryId(categoryId);
+        assertThat(result.getContent()).isEmpty();
+        verify(bookRepository, times(1)).findByCategoryId(categoryId, pageable);
     }
 
-    @Test
-    @DisplayName("Should handle null category ID")
-    void shouldHandleNullCategoryId() {
-        // Given
-        when(bookRepository.findByCategoryId(null)).thenReturn(Collections.emptyList());
-
-        // When
-        List<Book> result = bookService.getBooksByCategory(null);
-
-        // Then
-        assertThat(result).isEmpty();
-        verify(bookRepository, times(1)).findByCategoryId(null);
-    }
+    // ==================== Search Books Tests ====================
 
     @Test
-    @DisplayName("Should return single book for category with one book")
-    void shouldReturnSingleBookForCategoryWithOneBook() {
+    @DisplayName("Should search books by query with pagination")
+    void shouldSearchBooksByQuery() {
         // Given
-        Long categoryId = 2L;
-        List<Book> sciFiBooks = Arrays.asList(testBooks.get(2));
-        when(bookRepository.findByCategoryId(categoryId)).thenReturn(sciFiBooks);
-
-        // When
-        List<Book> result = bookService.getBooksByCategory(categoryId);
-
-        // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).isEqualTo("Dune");
-        verify(bookRepository, times(1)).findByCategoryId(categoryId);
-    }
-
-    // ==================== searchBooks Tests ====================
-
-    @Test
-    @DisplayName("Should search books by title")
-    void shouldSearchBooksByTitle() {
-        // Given
-        String keyword = "Clean";
+        String query = "Clean";
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
         List<Book> searchResult = Arrays.asList(testBooks.get(0));
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(searchResult);
+        Page<Book> expectedPage = new PageImpl<>(searchResult, pageable, searchResult.size());
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                eq(query), eq(query), any(Pageable.class)))
+                .thenReturn(expectedPage);
 
         // When
-        List<Book> result = bookService.searchBooks(keyword);
+        Page<Book> result = bookService.getBooks(query, null, page, size);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).contains("Clean");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).contains("Clean");
         verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(query, query, pageable);
     }
 
     @Test
-    @DisplayName("Should search books by author")
+    @DisplayName("Should search books by author with pagination")
     void shouldSearchBooksByAuthor() {
         // Given
-        String keyword = "Bloch";
+        String query = "Bloch";
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
         List<Book> searchResult = Arrays.asList(testBooks.get(1));
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(searchResult);
+        Page<Book> expectedPage = new PageImpl<>(searchResult, pageable, searchResult.size());
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                eq(query), eq(query), any(Pageable.class)))
+                .thenReturn(expectedPage);
 
         // When
-        List<Book> result = bookService.searchBooks(keyword);
+        Page<Book> result = bookService.getBooks(query, null, page, size);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAuthor()).contains("Bloch");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getAuthor()).contains("Bloch");
         verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(query, query, pageable);
     }
 
     @Test
-    @DisplayName("Should return empty list when no books match search")
-    void shouldReturnEmptyListWhenNoMatch() {
+    @DisplayName("Should return empty page when no books match search")
+    void shouldReturnEmptyPageWhenNoMatch() {
         // Given
-        String keyword = "NonExistent";
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(Collections.emptyList());
+        String query = "NonExistent";
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                eq(query), eq(query), any(Pageable.class)))
+                .thenReturn(emptyPage);
 
         // When
-        List<Book> result = bookService.searchBooks(keyword);
+        Page<Book> result = bookService.getBooks(query, null, page, size);
 
         // Then
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
         verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(query, query, pageable);
     }
 
     @Test
-    @DisplayName("Should handle empty search keyword")
-    void shouldHandleEmptySearchKeyword() {
+    @DisplayName("Should handle empty search query")
+    void shouldHandleEmptySearchQuery() {
         // Given
-        String keyword = "";
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(testBooks);
+        String query = "";
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> expectedPage = new PageImpl<>(testBooks, pageable, testBooks.size());
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(expectedPage);
 
         // When
-        List<Book> result = bookService.searchBooks(keyword);
+        Page<Book> result = bookService.getBooks(query, null, page, size);
 
         // Then
-        assertThat(result).hasSize(3);
-        verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+        assertThat(result.getContent()).hasSize(3);
+        verify(bookRepository, times(1)).findAll(pageable);
+        verify(bookRepository, never())
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(anyString(), anyString(), any(Pageable.class));
     }
 
-    @Test
-    @DisplayName("Should handle null search keyword")
-    void shouldHandleNullSearchKeyword() {
-        // Given
-        String keyword = null;
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(Collections.emptyList());
-
-        // When
-        List<Book> result = bookService.searchBooks(keyword);
-
-        // Then
-        verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
-    }
+    // ==================== Search with Category Tests ====================
 
     @Test
-    @DisplayName("Should search case-insensitively")
-    void shouldSearchCaseInsensitively() {
+    @DisplayName("Should search books by query and category")
+    void shouldSearchBooksByQueryAndCategory() {
         // Given
-        String keyword = "clean";
+        String query = "Code";
+        Long categoryId = 1L;
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
         List<Book> searchResult = Arrays.asList(testBooks.get(0));
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(searchResult);
+        Page<Book> expectedPage = new PageImpl<>(searchResult, pageable, searchResult.size());
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                eq(query), eq(query), eq(categoryId), any(Pageable.class)))
+                .thenReturn(expectedPage);
 
         // When
-        List<Book> result = bookService.searchBooks(keyword);
+        Page<Book> result = bookService.getBooks(query, categoryId, page, size);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).isEqualTo("Clean Code");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).contains("Clean");
+        assertThat(result.getContent().get(0).getCategory().getId()).isEqualTo(categoryId);
         verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                        query, query, categoryId, pageable);
     }
 
     @Test
-    @DisplayName("Should return multiple books matching search")
-    void shouldReturnMultipleBooksMatchingSearch() {
+    @DisplayName("Should return empty page when query and category have no matches")
+    void shouldReturnEmptyPageWhenQueryAndCategoryNoMatch() {
         // Given
-        String keyword = "Java";
-        List<Book> searchResult = Arrays.asList(testBooks.get(1));
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(searchResult);
+        String query = "NonExistent";
+        Long categoryId = 1L;
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                eq(query), eq(query), eq(categoryId), any(Pageable.class)))
+                .thenReturn(emptyPage);
 
         // When
-        List<Book> result = bookService.searchBooks(keyword);
+        Page<Book> result = bookService.getBooks(query, categoryId, page, size);
 
         // Then
-        assertThat(result).isNotEmpty();
+        assertThat(result.getContent()).isEmpty();
         verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                        query, query, categoryId, pageable);
     }
 
     @Test
-    @DisplayName("Should handle special characters in search")
-    void shouldHandleSpecialCharactersInSearch() {
+    @DisplayName("Should handle empty query with category ID")
+    void shouldHandleEmptyQueryWithCategory() {
         // Given
-        String keyword = "C++ & Java";
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(Collections.emptyList());
+        String query = "";
+        Long categoryId = 1L;
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        List<Book> fictionBooks = Arrays.asList(testBooks.get(0), testBooks.get(1));
+        Page<Book> expectedPage = new PageImpl<>(fictionBooks, pageable, fictionBooks.size());
+
+        when(bookRepository.findByCategoryId(eq(categoryId), any(Pageable.class)))
+                .thenReturn(expectedPage);
 
         // When
-        List<Book> result = bookService.searchBooks(keyword);
+        Page<Book> result = bookService.getBooks(query, categoryId, page, size);
 
         // Then
-        verify(bookRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+        assertThat(result.getContent()).hasSize(2);
+        verify(bookRepository, times(1)).findByCategoryId(categoryId, pageable);
+        verify(bookRepository, never())
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                        anyString(), anyString(), anyLong(), any(Pageable.class));
     }
 
+    // ==================== Edge Cases and Special Scenarios ====================
+
     @Test
-    @DisplayName("Should pass same keyword for both title and author search")
-    void shouldPassSameKeywordForBothSearches() {
+    @DisplayName("Should pass same query for both title and author search")
+    void shouldPassSameQueryForBothSearches() {
         // Given
-        String keyword = "Test";
-        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword))
-                .thenReturn(Collections.emptyList());
+        String query = "Test";
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                anyString(), anyString(), any(Pageable.class)))
+                .thenReturn(emptyPage);
 
         // When
-        bookService.searchBooks(keyword);
+        bookService.getBooks(query, null, page, size);
 
         // Then
         verify(bookRepository, times(1))
                 .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
-                        eq(keyword),
-                        eq(keyword)
+                        eq(query),
+                        eq(query),
+                        eq(pageable)
                 );
+    }
+
+    @Test
+    @DisplayName("Should use correct repository method based on parameters")
+    void shouldUseCorrectRepositoryMethod() {
+        // Given
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+        when(bookRepository.findByCategoryId(anyLong(), any(Pageable.class))).thenReturn(emptyPage);
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                anyString(), anyString(), any(Pageable.class))).thenReturn(emptyPage);
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                anyString(), anyString(), anyLong(), any(Pageable.class))).thenReturn(emptyPage);
+
+        // When & Then - No filters
+        bookService.getBooks(null, null, page, size);
+        verify(bookRepository, times(1)).findAll(any(Pageable.class));
+
+        // When & Then - Only category
+        bookService.getBooks(null, 1L, page, size);
+        verify(bookRepository, times(1)).findByCategoryId(eq(1L), any(Pageable.class));
+
+        // When & Then - Only query
+        bookService.getBooks("test", null, page, size);
+        verify(bookRepository, times(1))
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                        eq("test"), eq("test"), any(Pageable.class));
+
+        // When & Then - Both query and category
+        bookService.getBooks("test", 1L, page, size);
+        verify(bookRepository, times(1))
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                        eq("test"), eq("test"), eq(1L), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("Should handle large page numbers")
+    void shouldHandleLargePageNumbers() {
+        // Given
+        int page = 999;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+
+        // When
+        Page<Book> result = bookService.getBooks(null, null, page, size);
+
+        // Then
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(bookRepository).findAll(pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(999);
+    }
+
+    @Test
+    @DisplayName("Should handle special characters in search query")
+    void shouldHandleSpecialCharactersInSearch() {
+        // Given
+        String query = "C++ & Java!";
+        int page = 0;
+        int size = 5;
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                eq(query), eq(query), any(Pageable.class)))
+                .thenReturn(emptyPage);
+
+        // When
+        bookService.getBooks(query, null, page, size);
+
+        // Then
+        verify(bookRepository, times(1))
+                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(query, query, pageable);
+    }
+
+    @Test
+    @DisplayName("Should create pageable with correct page and size")
+    void shouldCreatePageableWithCorrectParameters() {
+        // Given
+        int page = 3;
+        int size = 15;
+        Page<Book> emptyPage = new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0);
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+
+        // When
+        bookService.getBooks(null, null, page, size);
+
+        // Then
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(bookRepository).findAll(pageableCaptor.capture());
+
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(3);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(15);
+    }
+
+    @Test
+    @DisplayName("Should return page metadata correctly")
+    void shouldReturnPageMetadataCorrectly() {
+        // Given
+        int page = 1;
+        int size = 2;
+        int totalElements = 10;
+        Pageable pageable = PageRequest.of(page, size);
+        List<Book> pageContent = Arrays.asList(testBooks.get(0), testBooks.get(1));
+        Page<Book> expectedPage = new PageImpl<>(pageContent, pageable, totalElements);
+
+        when(bookRepository.findAll(any(Pageable.class))).thenReturn(expectedPage);
+
+        // When
+        Page<Book> result = bookService.getBooks(null, null, page, size);
+
+        // Then
+        assertThat(result.getNumber()).isEqualTo(1);
+        assertThat(result.getSize()).isEqualTo(2);
+        assertThat(result.getTotalElements()).isEqualTo(10);
+        assertThat(result.getTotalPages()).isEqualTo(5); // 10 elements / 2 per page
+        assertThat(result.getContent()).hasSize(2);
     }
 }

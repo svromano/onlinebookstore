@@ -3,35 +3,43 @@ package com.bookstore.onlinebookstore.service;
 import com.bookstore.onlinebookstore.entity.Book;
 import com.bookstore.onlinebookstore.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
-/**
- * The type Book service.
- */
 @Service
 @RequiredArgsConstructor
 public class BookService {
 
-    // Dependency on the repository to perform database queries
     private final BookRepository bookRepository;
 
-    /**
-     * Gets all books.
-     *
-     * @return the all books
-     */
-    public List<Book> getAllBooks() {
-        return bookRepository.findAll();
-    }
+    public Page<Book> getBooks(
+            String query,
+            Long categoryId,
+            int page,
+            int size
+    ) {
 
-    public List<Book> getBooksByCategory(Long categoryId) {
-        return bookRepository.findByCategoryId(categoryId);
-    }
+        Pageable pageable = PageRequest.of(page, size);
 
-    public List<Book> searchBooks(String keyword) {
-
-        return bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(keyword, keyword);
+        if (query != null && !query.isEmpty() && categoryId != null) {
+            return bookRepository
+                    .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseAndCategoryId(
+                            query, query, categoryId, pageable
+                    );
+        }
+        else if (query != null && !query.isEmpty()) {
+            return bookRepository
+                    .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+                            query, query, pageable
+                    );
+        }
+        else if (categoryId != null) {
+            return bookRepository.findByCategoryId(categoryId, pageable);
+        }
+        else {
+            return bookRepository.findAll(pageable);
+        }
     }
 }

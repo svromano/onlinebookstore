@@ -10,54 +10,60 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
+import java.io.IOException;
 
-/**
- * The type Security config.
- */
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
 
-    /**
-     * Filter chain security filter chain.
-     *
-     * @param http the http
-     * @return the security filter chain
-     * @throws Exception the exception
-     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF (Cross-Site Request Forgery) protection for easier API testing
+                // Disable CSRF for simplicity (acceptable for demo projects)
                 .csrf(csrf -> csrf.disable())
 
-                // Permission Rules
+                // Authorization rules
                 .authorizeHttpRequests(auth -> auth
+                        // PUBLIC
                         .requestMatchers(
-                                "/login.html",      // Allow everyone to see the login page
-                                "/register.html",   // Allow everyone to see the register page
-                                "/api/auth/**",     // Allow access to login/register endpoints
-                                "/css/**",          // Allow static styles
-                                "/js/**"            // Allow frontend scripts
+                                "/login.html",
+                                "/register.html",
+                                "/api/auth/**",
+                                "/css/**",
+                                "/js/**"
                         ).permitAll()
-                        .anyRequest().authenticated() // All other pages (like /cart.html) require login
+
+                        // ADMIN ONLY
+                        .requestMatchers("/api/admin/**", "/admin.html", "/admin/**")
+                        .hasRole("ADMIN")
+
+                        // USER (logged in)
+                        .anyRequest().authenticated()
                 )
 
-                // Login Configuration
+                // Login configuration with custom success handler
                 .formLogin(form -> form
-                        .loginPage("/login.html")              // Custom UI for logging in
-                        .loginProcessingUrl("/api/auth/login") // The URL the frontend POSTs to
-                        .defaultSuccessUrl("/catalog.html", true) // Where to go after success
-                        .failureUrl("/login.html?error=true")  // Where to go if login fails
+                        .loginPage("/login.html")
+                        .loginProcessingUrl("/api/auth/login")
+                        .successHandler(customAuthenticationSuccessHandler()) // Custom handler
+                        .failureUrl("/login.html?error=true")
+                        .permitAll()
                 )
 
-                // Logout Configuration
+                // Logout configuration
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessUrl("/login.html")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
                         .permitAll()
                 );
 
@@ -65,24 +71,42 @@ public class SecurityConfig {
     }
 
     /**
-     * Password encoder password encoder.
-     *
-     * @return the password encoder
+     * Custom authentication success handler
+     * Redirects ADMIN users to admin.html and regular users to catalog.html
      */
+    @Bean
+    public AuthenticationSuccessHandler customAuthenticationSuccessHandler() {
+        return (HttpServletRequest request, HttpServletResponse response, Authentication authentication) -> {
+            // Check if user has ADMIN role
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .anyMatch(role -> role.equals("ROLE_ADMIN"));
+
+            // Debug logging
+            System.out.println("User logged in: " + authentication.getName());
+            System.out.println("Authorities: " + authentication.getAuthorities());
+            System.out.println("Is Admin: " + isAdmin);
+
+            // Redirect based on role
+            if (isAdmin) {
+                response.sendRedirect("/admin.html");
+            } else {
+                response.sendRedirect("/catalog.html");
+            }
+        };
+    }
+
+    // Password hashing
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Authentication manager authentication manager.
-     *
-     * @param config the config
-     * @return the authentication manager
-     * @throws Exception the exception
-     */
+    // Authentication manager
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 }
